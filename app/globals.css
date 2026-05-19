@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+/* Class-based dark mode (toggle sets `dark` on <html>) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --bg: #ffffff;
+  --fg: #000000;
+}
+
+.dark {
+  --bg: #0a0a0a;
+  --fg: #fafafa;
+}
+
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--fg);
+  --font-sans: var(--font-roboto), ui-sans-serif, system-ui, sans-serif;
+}
+
+html {
+  background: var(--bg);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar {
+  display: none;
+}
+
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-roboto), ui-sans-serif, system-ui, sans-serif;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+body::-webkit-scrollbar {
+  display: none;
+}
+
+/* Cards / panels: no border, no shadow per design */
+.card-slot {
+  border: none;
+  box-shadow: none;
+  outline: none;
+}
+
+/** Gentle enter when deck / card identity changes (new mount). Respects reduced motion. */
+@keyframes card-slot-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.988);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.card-slot-enter {
+  animation: card-slot-enter 0.28s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-slot-enter {
+    animation: none;
+  }
+}
+
+/* Flip countdown digits */
+@keyframes flip-digit-enter {
+  from {
+    opacity: 0;
+    transform: translateY(0.22em) rotateX(-62deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotateX(0deg);
+  }
+}
+
+.flip-digit-char {
+  animation: flip-digit-enter 0.32s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flip-digit-char {
+    animation: none;
+  }
+}
