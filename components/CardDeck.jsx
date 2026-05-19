@@ -15,11 +15,12 @@ const DECK_GAP_REM = 1;
 /** Desktop deck never wider than three cards plus gaps between them */
 const MAX_DECK_WIDTH_THREE_CARDS = `min(100%, calc(${CARD_FIXED_WIDTH_PX * 3}px + ${2 * DECK_GAP_REM}rem))`;
 
-/** Playing-card portrait placeholder when face-down — tablet/desktop */
-const CARD_ASPECT_RATIO_DESKTOP = "5 / 7";
-
-/** Shorter placeholder on narrow viewports when face-down */
-const CARD_ASPECT_RATIO_MOBILE = "5 / 6";
+/**
+ * All bundled card PNGs are 621×432 → CSS ratio 23:16 (wide, not portrait).
+ * A portrait placeholder (eg 5/7) tall frame plus object-contain adds big white bands,
+ * looks like slots are “stretched tall” especially when several cards appear at once.
+ */
+const CARD_ASPECT_RATIO = "23 / 16";
 
 /** Layout hints for intrinsic sizing (`sizes` width map when `fill`/`width` are set). */
 const IMAGE_SIZES =
@@ -87,10 +88,6 @@ export default function CardDeck({ paths, revealed }) {
     () => false,
   );
 
-  const slotAspectRatio = narrowViewport
-    ? CARD_ASPECT_RATIO_MOBILE
-    : CARD_ASPECT_RATIO_DESKTOP;
-
   const deckClassName = narrowViewport
     ? "flex h-fit w-full max-w-full min-w-0 flex-col items-center gap-4"
     : "flex h-fit w-full min-w-0 flex-row flex-wrap justify-center items-start content-start gap-4 mx-auto";
@@ -109,7 +106,7 @@ export default function CardDeck({ paths, revealed }) {
           key={`${index}-${src}`}
           src={src}
           revealed={revealed}
-          aspectRatio={slotAspectRatio}
+          aspectRatio={CARD_ASPECT_RATIO}
           narrowStack={narrowViewport}
           fetchPriority={index < 5 ? "high" : "auto"}
           eagerPriority={index < 3}
