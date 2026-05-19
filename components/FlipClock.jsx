@@ -1,10 +1,11 @@
 "use client";
 
-function FlipDigit({ digit }) {
+function FlipDigit({ digit, slot }) {
   const d = ((digit % 10) + 10) % 10;
   return (
     <span
-      className="inline-flex min-w-[0.62em] justify-center tabular-nums text-xl font-medium text-[var(--fg)] md:text-2xl"
+      key={`${slot}-${d}`}
+      className="flip-digit-char inline-flex min-w-[0.62em] justify-center tabular-nums text-xl font-medium text-[var(--fg)] md:text-2xl"
       aria-hidden
     >
       {d}
@@ -26,16 +27,16 @@ export default function FlipClock({ secondsLeft, className = "" }) {
       className={`flex flex-row flex-wrap items-center justify-center gap-px tabular-nums ${className}`}
       role="timer"
     >
-      <FlipDigit digit={mt} />
-      <FlipDigit digit={mo} />
+      <FlipDigit slot="m10" digit={mt} />
+      <FlipDigit slot="m1" digit={mo} />
       <span
         className="mx-0.5 text-xl font-medium text-[var(--fg)] opacity-90 md:text-2xl"
         aria-hidden
       >
         :
       </span>
-      <FlipDigit digit={st} />
-      <FlipDigit digit={so} />
+      <FlipDigit slot="s10" digit={st} />
+      <FlipDigit slot="s1" digit={so} />
     </div>
   );
 }

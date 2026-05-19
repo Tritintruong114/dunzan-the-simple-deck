@@ -1,9 +1,9 @@
 "use client";
 
 import {
+  startTransition,
   useCallback,
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -17,7 +17,6 @@ import {
 } from "@/lib/deckHistoryStorage";
 import { pickRandom } from "@/lib/shuffle";
 import CardDeck from "@/components/CardDeck";
-import DeckLoadingSkeleton from "@/components/DeckLoadingSkeleton";
 import ConfigDropdown from "@/components/ConfigDropdown";
 import FlipClock from "@/components/FlipClock";
 
@@ -49,9 +48,6 @@ export default function DeckHome() {
   const [configOpen, setConfigOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
 
-  /** False until localStorage hydrate runs — drives deck loading skeleton */
-  const [deckHydrated, setDeckHydrated] = useState(false);
-
   const displayedPaths =
     deckHistory.entries.length > 0 &&
     deckHistory.index >= 0 &&
@@ -74,11 +70,11 @@ export default function DeckHome() {
   }, []);
 
   /**
-   * Hydrate synchronously before paint so we never flash an empty deck after JS loads.
-   * (Responsive deck layout uses CSS `md:` breakpoints — no client-only media flip.)
+   * Hydrate after paint: `useLayoutEffect` blocked the first paint (felt frozen).
+   * `startTransition` keeps the shell responsive while many `<Image>` nodes mount.
    */
-  useLayoutEffect(() => {
-    try {
+  useEffect(() => {
+    startTransition(() => {
       const validSet = new Set(allCards);
       const raw = loadDeckHistory();
       if (raw?.entries?.length) {
@@ -98,9 +94,7 @@ export default function DeckHome() {
       setDeckHistory(initial);
       saveDeckHistory(initial);
       setCardCount(1);
-    } finally {
-      setDeckHydrated(true);
-    }
+    });
   }, [allCards]);
 
   const reshuffleFromCountdown = useCallback(() => {
@@ -208,11 +202,7 @@ export default function DeckHome() {
 
       <main className="flex min-h-0 flex-1 flex-col w-full items-center gap-4 md:gap-6">
         <section className="flex min-h-0 w-full min-w-0 flex-1 flex-col items-center justify-center gap-4 px-4 pb-1">
-          {!deckHydrated ? (
-            <DeckLoadingSkeleton />
-          ) : (
-            <CardDeck paths={displayedPaths} revealed={revealed} />
-          )}
+          <CardDeck paths={displayedPaths} revealed={revealed} />
         </section>
       </main>
 
