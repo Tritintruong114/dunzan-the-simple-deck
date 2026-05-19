@@ -1,4 +1,3 @@
-import Script from "next/script";
 import { Roboto } from "next/font/google";
 import "./globals.css";
 
@@ -24,9 +23,11 @@ export default function RootLayout({ children }) {
         className="min-h-full flex flex-col antialiased"
         suppressHydrationWarning
       >
-        <Script id="dunzan-theme-boot" strategy="beforeInteractive">
-          {themeBootstrapScript}
-        </Script>
+        {/* Sync inline script avoids next/script hydrating in a way that triggers React warnings. Runs during HTML parse before app JS. */}
+        <script
+          id="dunzan-theme-boot"
+          dangerouslySetInnerHTML={{ __html: themeBootstrapScript }}
+        />
         {children}
       </body>
     </html>

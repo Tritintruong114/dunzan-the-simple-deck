@@ -9,9 +9,6 @@ const MOBILE_MAX_WIDTH_PX = 767;
 /** Fixed card width when viewport fits; capped by max-w-full / parent on narrow widths */
 const CARD_FIXED_WIDTH_PX = 440;
 
-/** Intrinsic layout hint (~5:7 card); displayed with object-contain */
-const CARD_IMAGE_HINT_HEIGHT = Math.round((CARD_FIXED_WIDTH_PX * 7) / 5);
-
 /** Matches Tailwind `gap-4` on the deck row — keep in sync when changing gap */
 const DECK_GAP_REM = 1;
 
@@ -38,10 +35,6 @@ function getMobileMaxWidthMatches() {
   return window.matchMedia(`(max-width: ${MOBILE_MAX_WIDTH_PX}px)`).matches;
 }
 
-/** Stagger card enters slightly (capped so 7 cards stay snappy) */
-const CARD_ENTER_STAGGER_MS = 22;
-const CARD_ENTER_STAGGER_CAP_MS = 110;
-
 const SLOT_BASE =
   "card-slot card-slot-enter relative h-fit min-h-0 shrink-0 overflow-hidden rounded-none bg-[var(--bg)] p-0 leading-none";
 
@@ -50,7 +43,6 @@ function CardSlot({
   revealed,
   aspectRatio,
   narrowStack,
-  enterDelayMs,
   fetchPriority,
   eagerPriority,
 }) {
@@ -66,38 +58,21 @@ function CardSlot({
       className={SLOT_BASE}
       style={{
         ...sizingStyle,
-        animationDelay: `${enterDelayMs}ms`,
-        ...(revealed ? {} : { aspectRatio }),
+        aspectRatio,
       }}
     >
-      {revealed ? (
-        <Image
-          src={src}
-          alt=""
-          width={CARD_FIXED_WIDTH_PX}
-          height={CARD_IMAGE_HINT_HEIGHT}
-          sizes={IMAGE_SIZES}
-          quality={82}
-          priority={eagerPriority}
-          loading="eager"
-          fetchPriority={fetchPriority}
-          draggable={false}
-          className={`${sharedImgClass} relative h-auto w-full max-w-full`}
-        />
-      ) : (
-        <Image
-          src={src}
-          alt=""
-          fill
-          sizes={IMAGE_SIZES}
-          quality={82}
-          priority={eagerPriority}
-          loading="eager"
-          fetchPriority={fetchPriority}
-          draggable={false}
-          className={`${sharedImgClass} absolute inset-0 h-full w-full opacity-0`}
-        />
-      )}
+      <Image
+        src={src}
+        alt=""
+        fill
+        sizes={IMAGE_SIZES}
+        quality={82}
+        priority={eagerPriority}
+        loading="eager"
+        fetchPriority={fetchPriority}
+        draggable={false}
+        className={`${sharedImgClass} ${revealed ? "" : "opacity-0"}`}
+      />
       {!revealed ? (
         <div className="absolute inset-0 z-[2] bg-[var(--bg)]" aria-hidden />
       ) : null}
@@ -136,10 +111,6 @@ export default function CardDeck({ paths, revealed }) {
           revealed={revealed}
           aspectRatio={slotAspectRatio}
           narrowStack={narrowViewport}
-          enterDelayMs={Math.min(
-            index * CARD_ENTER_STAGGER_MS,
-            CARD_ENTER_STAGGER_CAP_MS,
-          )}
           fetchPriority={index < 5 ? "high" : "auto"}
           eagerPriority={index < 3}
         />

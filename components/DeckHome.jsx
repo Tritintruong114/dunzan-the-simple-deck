@@ -17,6 +17,8 @@ import {
 } from "@/lib/deckHistoryStorage";
 import { pickRandom } from "@/lib/shuffle";
 import CardDeck from "@/components/CardDeck";
+import CardLibraryPrefetch from "@/components/CardLibraryPrefetch";
+import DeckImagePreloads from "@/components/DeckImagePreloads";
 import ConfigDropdown from "@/components/ConfigDropdown";
 import FlipClock from "@/components/FlipClock";
 
@@ -194,6 +196,7 @@ export default function DeckHome() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--bg)] text-[var(--fg)] pb-36 pt-8 md:pt-12">
+      <CardLibraryPrefetch />
       <header className="max-w-3xl mx-auto w-full px-4 text-center mb-8 md:mb-10">
         <h1 className="text-3xl md:text-4xl font-medium tracking-tight text-[var(--fg)]">
           Let it be simple
@@ -202,6 +205,9 @@ export default function DeckHome() {
 
       <main className="flex min-h-0 flex-1 flex-col w-full items-center gap-4 md:gap-6">
         <section className="flex min-h-0 w-full min-w-0 flex-1 flex-col items-center justify-center gap-4 px-4 pb-1">
+          {displayedPaths.length > 0 ? (
+            <DeckImagePreloads paths={displayedPaths} />
+          ) : null}
           <CardDeck paths={displayedPaths} revealed={revealed} />
         </section>
       </main>
