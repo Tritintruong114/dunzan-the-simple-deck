@@ -1,74 +1,34 @@
 "use client";
 
 import Image from "next/image";
-import { useSyncExternalStore } from "react";
 
-/** Tailwind `md` starts at 768px — single-column deck below this width */
+/** Tailwind `md` breakpoint — keep in sync with `sizes` below */
 const MOBILE_MAX_WIDTH_PX = 767;
 
-/** Fixed card width when viewport fits; capped by max-w-full / parent on narrow widths */
 const CARD_FIXED_WIDTH_PX = 440;
 
-/** Intrinsic size hint for optimizer (playing-card ~5:7); actual layout uses object-contain */
+/** Intrinsic size hint for optimizer (playing-card ~5:7); layout uses object-contain */
 const CARD_IMAGE_HINT_HEIGHT = Math.round((CARD_FIXED_WIDTH_PX * 7) / 5);
 
-/** Matches Tailwind `gap-4` on the deck row — keep in sync when changing gap */
-const DECK_GAP_REM = 1;
+/** Desktop deck never wider than three cards plus gaps (`gap-4` = 1rem × 2) */
+const MAX_DECK_MD_CLASS =
+  "md:max-w-[min(100%,calc(440px*3+2rem))]";
 
-/** Desktop deck never wider than three cards plus gaps between them */
-const MAX_DECK_WIDTH_THREE_CARDS = `min(100%, calc(${CARD_FIXED_WIDTH_PX * 3}px + ${2 * DECK_GAP_REM}rem))`;
-
-/** Playing-card portrait placeholder when face-down — tablet/desktop */
-const CARD_ASPECT_RATIO_DESKTOP = "5 / 7";
-
-/** Shorter placeholder on narrow viewports when face-down */
-const CARD_ASPECT_RATIO_MOBILE = "5 / 6";
-
-/** Visible deck cards are in-viewport — avoid lazy so PNGs start fetching immediately */
+/** Visible deck cards are in-viewport — sizes drives `_next/image` width */
 const IMAGE_SIZES =
   `(max-width: ${MOBILE_MAX_WIDTH_PX}px) min(100vw, ${CARD_FIXED_WIDTH_PX}px), ${CARD_FIXED_WIDTH_PX}px`;
 
-function subscribeMobileMaxWidth(cb) {
-  const mq = window.matchMedia(`(max-width: ${MOBILE_MAX_WIDTH_PX}px)`);
-  mq.addEventListener("change", cb);
-  return () => mq.removeEventListener("change", cb);
-}
-
-function getMobileMaxWidthMatches() {
-  return window.matchMedia(`(max-width: ${MOBILE_MAX_WIDTH_PX}px)`).matches;
-}
-
-/** Stagger card enters slightly (capped so 7 cards stay snappy) */
-const CARD_ENTER_STAGGER_MS = 22;
-const CARD_ENTER_STAGGER_CAP_MS = 110;
-
+/** Responsive slot sizing via CSS only — avoids SSR/client `matchMedia` mismatch flicker */
 const SLOT_BASE =
-  "card-slot card-slot-enter relative h-fit min-h-0 shrink-0 overflow-hidden rounded-none bg-[var(--bg)] p-0 leading-none";
+  "card-slot relative h-fit min-h-0 shrink-0 overflow-hidden rounded-none bg-[var(--bg)] p-0 leading-none w-full max-w-[440px] md:w-[440px] md:max-w-full";
 
-function CardSlot({
-  src,
-  revealed,
-  aspectRatio,
-  narrowStack,
-  enterDelayMs,
-  fetchPriority,
-  eagerLoad,
-}) {
-  const sizingStyle = narrowStack
-    ? { width: "100%", maxWidth: CARD_FIXED_WIDTH_PX }
-    : { width: CARD_FIXED_WIDTH_PX, maxWidth: "100%" };
-
+function CardSlot({ src, revealed, fetchPriority, eagerLoad }) {
   const sharedImgClass =
     "z-[1] m-0 object-contain p-0 align-middle pointer-events-none select-none";
 
   return (
     <div
-      className={SLOT_BASE}
-      style={{
-        ...sizingStyle,
-        animationDelay: `${enterDelayMs}ms`,
-        ...(revealed ? {} : { aspectRatio }),
-      }}
+      className={`${SLOT_BASE}${revealed ? "" : " aspect-[5/6] md:aspect-[5/7]"}`}
     >
       {revealed ? (
         <Image
@@ -106,40 +66,15 @@ function CardSlot({
 }
 
 export default function CardDeck({ paths, revealed }) {
-  const narrowViewport = useSyncExternalStore(
-    subscribeMobileMaxWidth,
-    getMobileMaxWidthMatches,
-    () => false,
-  );
-
-  const slotAspectRatio = narrowViewport
-    ? CARD_ASPECT_RATIO_MOBILE
-    : CARD_ASPECT_RATIO_DESKTOP;
-
-  const deckClassName = narrowViewport
-    ? "flex h-fit w-full max-w-full min-w-0 flex-col items-center gap-4"
-    : "flex h-fit w-full min-w-0 flex-row flex-wrap justify-center items-start content-start gap-4 mx-auto";
-
   return (
     <div
-      className={deckClassName}
-      style={
-        narrowViewport
-          ? undefined
-          : { maxWidth: MAX_DECK_WIDTH_THREE_CARDS }
-      }
+      className={`flex h-fit w-full min-w-0 flex-col items-center gap-4 md:flex-row md:flex-wrap md:justify-center md:items-start md:content-start md:gap-4 mx-auto ${MAX_DECK_MD_CLASS}`}
     >
       {paths.map((src, index) => (
         <CardSlot
           key={`${index}-${src}`}
           src={src}
           revealed={revealed}
-          aspectRatio={slotAspectRatio}
-          narrowStack={narrowViewport}
-          enterDelayMs={Math.min(
-            index * CARD_ENTER_STAGGER_MS,
-            CARD_ENTER_STAGGER_CAP_MS,
-          )}
           fetchPriority={index === 0 ? "high" : "auto"}
           eagerLoad={index < 3}
         />
