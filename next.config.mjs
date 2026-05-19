@@ -8,6 +8,14 @@ const nextConfig = {
   turbopack: {
     root: __dirname,
   },
+  /**
+   * Card art is already served from `public/` at display resolution.
+   * Skipping the default `/_next/image` pipeline avoids first-hit Sharp work
+   * (noticeable in dev and on cold serverless) while keeping `next/image` layout.
+   */
+  images: {
+    unoptimized: true,
+  },
 };
 
 export default nextConfig;

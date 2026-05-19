@@ -9,7 +9,7 @@ const MOBILE_MAX_WIDTH_PX = 767;
 /** Fixed card width when viewport fits; capped by max-w-full / parent on narrow widths */
 const CARD_FIXED_WIDTH_PX = 440;
 
-/** Intrinsic size hint for optimizer (playing-card ~5:7); actual layout uses object-contain */
+/** Intrinsic layout hint (~5:7 card); displayed with object-contain */
 const CARD_IMAGE_HINT_HEIGHT = Math.round((CARD_FIXED_WIDTH_PX * 7) / 5);
 
 /** Matches Tailwind `gap-4` on the deck row — keep in sync when changing gap */
@@ -24,7 +24,7 @@ const CARD_ASPECT_RATIO_DESKTOP = "5 / 7";
 /** Shorter placeholder on narrow viewports when face-down */
 const CARD_ASPECT_RATIO_MOBILE = "5 / 6";
 
-/** Visible deck cards are in-viewport — avoid lazy so PNGs start fetching immediately */
+/** Layout hints for intrinsic sizing (`sizes` width map when `fill`/`width` are set). */
 const IMAGE_SIZES =
   `(max-width: ${MOBILE_MAX_WIDTH_PX}px) min(100vw, ${CARD_FIXED_WIDTH_PX}px), ${CARD_FIXED_WIDTH_PX}px`;
 
@@ -52,7 +52,7 @@ function CardSlot({
   narrowStack,
   enterDelayMs,
   fetchPriority,
-  eagerLoad,
+  eagerPriority,
 }) {
   const sizingStyle = narrowStack
     ? { width: "100%", maxWidth: CARD_FIXED_WIDTH_PX }
@@ -78,8 +78,8 @@ function CardSlot({
           height={CARD_IMAGE_HINT_HEIGHT}
           sizes={IMAGE_SIZES}
           quality={82}
-          priority={eagerLoad}
-          decoding="async"
+          priority={eagerPriority}
+          loading="eager"
           fetchPriority={fetchPriority}
           draggable={false}
           className={`${sharedImgClass} relative h-auto w-full max-w-full`}
@@ -91,8 +91,8 @@ function CardSlot({
           fill
           sizes={IMAGE_SIZES}
           quality={82}
-          priority={eagerLoad}
-          decoding="async"
+          priority={eagerPriority}
+          loading="eager"
           fetchPriority={fetchPriority}
           draggable={false}
           className={`${sharedImgClass} absolute inset-0 h-full w-full opacity-0`}
@@ -140,8 +140,8 @@ export default function CardDeck({ paths, revealed }) {
             index * CARD_ENTER_STAGGER_MS,
             CARD_ENTER_STAGGER_CAP_MS,
           )}
-          fetchPriority={index === 0 ? "high" : "auto"}
-          eagerLoad={index < 3}
+          fetchPriority={index < 5 ? "high" : "auto"}
+          eagerPriority={index < 3}
         />
       ))}
     </div>
