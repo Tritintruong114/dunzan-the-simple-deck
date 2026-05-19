@@ -52,6 +52,7 @@ function CardSlot({
   narrowStack,
   enterDelayMs,
   fetchPriority,
+  eagerLoad,
 }) {
   const sizingStyle = narrowStack
     ? { width: "100%", maxWidth: CARD_FIXED_WIDTH_PX }
@@ -77,7 +78,8 @@ function CardSlot({
           height={CARD_IMAGE_HINT_HEIGHT}
           sizes={IMAGE_SIZES}
           quality={82}
-          priority
+          priority={eagerLoad}
+          decoding="async"
           fetchPriority={fetchPriority}
           draggable={false}
           className={`${sharedImgClass} relative h-auto w-full max-w-full`}
@@ -89,7 +91,8 @@ function CardSlot({
           fill
           sizes={IMAGE_SIZES}
           quality={82}
-          priority
+          priority={eagerLoad}
+          decoding="async"
           fetchPriority={fetchPriority}
           draggable={false}
           className={`${sharedImgClass} absolute inset-0 h-full w-full opacity-0`}
@@ -138,6 +141,7 @@ export default function CardDeck({ paths, revealed }) {
             CARD_ENTER_STAGGER_CAP_MS,
           )}
           fetchPriority={index === 0 ? "high" : "auto"}
+          eagerLoad={index < 3}
         />
       ))}
     </div>

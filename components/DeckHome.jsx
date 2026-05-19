@@ -1,9 +1,9 @@
 "use client";
 
 import {
+  startTransition,
   useCallback,
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -70,29 +70,31 @@ export default function DeckHome() {
   }, []);
 
   /**
-   * Hydrate deck from localStorage before paint so `<Image>` mounts ASAP.
-   * (`useEffect` + microtask ran after paint → empty deck flash + late image fetch.)
+   * Hydrate after paint: `useLayoutEffect` blocked the first paint (felt frozen).
+   * `startTransition` keeps the shell responsive while many `<Image>` nodes mount.
    */
-  useLayoutEffect(() => {
-    const validSet = new Set(allCards);
-    const raw = loadDeckHistory();
-    if (raw?.entries?.length) {
-      const sanitized = sanitizeEntries(raw.entries, validSet);
-      const clamped = clampLoadedHistory(raw, sanitized);
-      if (clamped) {
-        const pathsNow = clamped.entries[clamped.index];
-        const n = pathsNow?.length ?? 1;
-        setCardCount(Math.min(7, Math.max(1, n)));
-        setDeckHistory(clamped);
-        saveDeckHistory(clamped);
-        return;
+  useEffect(() => {
+    startTransition(() => {
+      const validSet = new Set(allCards);
+      const raw = loadDeckHistory();
+      if (raw?.entries?.length) {
+        const sanitized = sanitizeEntries(raw.entries, validSet);
+        const clamped = clampLoadedHistory(raw, sanitized);
+        if (clamped) {
+          const pathsNow = clamped.entries[clamped.index];
+          const n = pathsNow?.length ?? 1;
+          setCardCount(Math.min(7, Math.max(1, n)));
+          setDeckHistory(clamped);
+          saveDeckHistory(clamped);
+          return;
+        }
       }
-    }
-    const paths = pickRandom(allCards, 1);
-    const initial = { entries: [paths], index: 0 };
-    setDeckHistory(initial);
-    saveDeckHistory(initial);
-    setCardCount(1);
+      const paths = pickRandom(allCards, 1);
+      const initial = { entries: [paths], index: 0 };
+      setDeckHistory(initial);
+      saveDeckHistory(initial);
+      setCardCount(1);
+    });
   }, [allCards]);
 
   const reshuffleFromCountdown = useCallback(() => {
