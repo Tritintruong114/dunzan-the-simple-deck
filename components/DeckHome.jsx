@@ -15,18 +15,19 @@ import {
   sanitizeEntries,
   saveDeckHistory,
 } from "@/lib/deckHistoryStorage";
-import { pickRandom } from "@/lib/shuffle";
+import {
+  buildRemainingPoolFromHistory,
+  drawWithoutReplacement,
+  shuffle,
+} from "@/lib/shuffle";
 import CardDeck from "@/components/CardDeck";
 import CardLibraryPrefetch from "@/components/CardLibraryPrefetch";
-import DeckImagePreloads from "@/components/DeckImagePreloads";
 import ConfigDropdown from "@/components/ConfigDropdown";
+import DeckImagePreloads from "@/components/DeckImagePreloads";
 import FlipClock from "@/components/FlipClock";
-
-const STORAGE_THEME = "dunzan-theme";
 
 const EMPTY_HISTORY = { entries: [], index: 0 };
 
-/** Accessible verbal summary of remaining time */
 function formatSecondsForAria(s) {
   const v = Math.max(0, Math.floor(Number(s)) || 0);
   if (v < 60) return `${v} seconds`;
@@ -35,20 +36,51 @@ function formatSecondsForAria(s) {
   return `${m} minutes ${sec} seconds`;
 }
 
+function PauseIcon({ className }) {
+  return (
+    <svg
+      className={className}
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden
+    >
+      <path d="M6 5h4v14H6V5zm8 0h4v14h-4V5z" />
+    </svg>
+  );
+}
+
+function PlayIcon({ className }) {
+  return (
+    <svg
+      className={className}
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden
+    >
+      <path d="M8 5v14l11-7-11-7z" />
+    </svg>
+  );
+}
+
 export default function DeckHome() {
   const allCards = cardManifest;
 
   const [cardCount, setCardCount] = useState(1);
   const [countdownSeconds, setCountdownSeconds] = useState(10);
   const [countdownEnabled, setCountdownEnabled] = useState(false);
+  const [countdownPaused, setCountdownPaused] = useState(false);
 
   const [deckHistory, setDeckHistory] = useState(EMPTY_HISTORY);
+  const poolRef = useRef(shuffle([...allCards]));
 
   const [secondsLeft, setSecondsLeft] = useState(0);
   const cycleTransitionLockRef = useRef(false);
 
   const [configOpen, setConfigOpen] = useState(false);
-  const [isDark, setIsDark] = useState(false);
 
   const displayedPaths =
     deckHistory.entries.length > 0 &&
@@ -66,16 +98,6 @@ export default function DeckHome() {
   }, []);
 
   useEffect(() => {
-    queueMicrotask(() => {
-      setIsDark(document.documentElement.classList.contains("dark"));
-    });
-  }, []);
-
-  /**
-   * Hydrate after paint: `useLayoutEffect` blocked the first paint (felt frozen).
-   * `startTransition` keeps the shell responsive while many `<Image>` nodes mount.
-   */
-  useEffect(() => {
     startTransition(() => {
       const validSet = new Set(allCards);
       const raw = loadDeckHistory();
@@ -88,24 +110,54 @@ export default function DeckHome() {
           setCardCount(Math.min(7, Math.max(1, n)));
           setDeckHistory(clamped);
           saveDeckHistory(clamped);
+          poolRef.current = buildRemainingPoolFromHistory(
+            allCards,
+            clamped.entries,
+            clamped.index,
+          );
           return;
         }
       }
-      const paths = pickRandom(allCards, 1);
-      const initial = { entries: [paths], index: 0 };
+      const pool0 = shuffle([...allCards]);
+      const { hand, nextPool } = drawWithoutReplacement(pool0, 1, allCards);
+      const initial = { entries: [hand], index: 0 };
       setDeckHistory(initial);
       saveDeckHistory(initial);
       setCardCount(1);
+      poolRef.current = nextPool;
     });
   }, [allCards]);
 
+  const commitDraw = useCallback(
+    (paths) => {
+      startTransition(() => pushDeckToHistory(paths));
+    },
+    [pushDeckToHistory],
+  );
+
+  const runDrawFromPool = useCallback(() => {
+    const { hand, nextPool } = drawWithoutReplacement(
+      poolRef.current,
+      cardCount,
+      allCards,
+    );
+    poolRef.current = nextPool;
+    commitDraw(hand);
+  }, [allCards, cardCount, commitDraw]);
+
   const reshuffleFromCountdown = useCallback(() => {
-    pushDeckToHistory(pickRandom(allCards, cardCount));
+    const { hand, nextPool } = drawWithoutReplacement(
+      poolRef.current,
+      cardCount,
+      allCards,
+    );
+    poolRef.current = nextPool;
+    commitDraw(hand);
     setSecondsLeft(countdownSeconds);
-  }, [allCards, cardCount, countdownSeconds, pushDeckToHistory]);
+  }, [allCards, cardCount, countdownSeconds, commitDraw]);
 
   useEffect(() => {
-    if (!countdownEnabled) return;
+    if (!countdownEnabled || countdownPaused) return;
     if (secondsLeft <= 0) return;
     const id = window.setTimeout(() => {
       setSecondsLeft((prev) => {
@@ -123,7 +175,12 @@ export default function DeckHome() {
       });
     }, 1000);
     return () => window.clearTimeout(id);
-  }, [secondsLeft, countdownEnabled, reshuffleFromCountdown]);
+  }, [
+    secondsLeft,
+    countdownEnabled,
+    countdownPaused,
+    reshuffleFromCountdown,
+  ]);
 
   const revealed = displayedPaths.length > 0;
 
@@ -151,7 +208,31 @@ export default function DeckHome() {
   };
 
   const handleRandom = () => {
-    pushDeckToHistory(pickRandom(allCards, cardCount));
+    runDrawFromPool();
+    if (!countdownEnabled) {
+      setSecondsLeft(0);
+      return;
+    }
+    setSecondsLeft(countdownSeconds);
+  };
+
+  /**
+   * Full shuffle of the draw pool, deal a fresh hand, and **replace** saved history — previous
+   * ‹ / › snapshots are cleared. Resets the countdown when countdown mode is on.
+   */
+  const handleShuffleReset = () => {
+    poolRef.current = shuffle([...allCards]);
+    const { hand, nextPool } = drawWithoutReplacement(
+      poolRef.current,
+      cardCount,
+      allCards,
+    );
+    poolRef.current = nextPool;
+    const fresh = { entries: [hand], index: 0 };
+    startTransition(() => {
+      setDeckHistory(fresh);
+      saveDeckHistory(fresh);
+    });
     if (!countdownEnabled) {
       setSecondsLeft(0);
       return;
@@ -167,9 +248,11 @@ export default function DeckHome() {
     setCardCount(n);
     setCountdownSeconds(sec);
     setCountdownEnabled(ce);
+    setCountdownPaused(false);
 
-    const paths = pickRandom(allCards, n);
-    pushDeckToHistory(paths);
+    const { hand, nextPool } = drawWithoutReplacement(poolRef.current, n, allCards);
+    poolRef.current = nextPool;
+    commitDraw(hand);
 
     if (!ce) {
       setSecondsLeft(0);
@@ -179,28 +262,28 @@ export default function DeckHome() {
     setSecondsLeft(sec);
   };
 
-  const toggleTheme = () => {
-    const goingDark = !document.documentElement.classList.contains("dark");
-    if (goingDark) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem(STORAGE_THEME, "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem(STORAGE_THEME, "light");
-    }
-    setIsDark(goingDark);
-  };
-
   const navBtnClass =
-    "inline-flex shrink-0 items-center justify-center rounded-none border-none min-h-11 min-w-11 px-4 py-4 text-2xl leading-none font-medium tabular-nums text-[var(--fg)] md:min-h-12 md:min-w-12 md:text-3xl bg-transparent shadow-none outline-none hover:opacity-90 active:opacity-90 disabled:pointer-events-none disabled:opacity-25 focus-visible:ring-2 focus-visible:ring-[var(--fg)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]";
+    "cursor-pointer inline-flex shrink-0 items-center justify-center rounded-none border-none min-h-11 min-w-11 px-4 py-4 text-2xl leading-none font-medium tabular-nums text-[var(--fg)] md:min-h-12 md:min-w-12 md:text-3xl bg-transparent shadow-none outline-none hover:opacity-90 active:opacity-90 disabled:pointer-events-none disabled:opacity-25 focus-visible:ring-2 focus-visible:ring-[var(--fg)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]";
+
+  const primaryBtnClass =
+    "cursor-pointer shrink-0 rounded-none border-none px-6 py-3 text-base font-medium bg-[var(--fg)] text-[var(--bg)] shadow-none outline-none hover:opacity-90 active:opacity-90 focus-visible:ring-2 focus-visible:ring-[var(--fg)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]";
+
+  const secondaryBtnClass =
+    "cursor-pointer shrink-0 rounded-none border border-black bg-white px-4 py-3 text-sm font-medium text-black shadow-none outline-none hover:opacity-90 active:opacity-90 focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2";
+
+  const pauseResumeBtnClass =
+    "cursor-pointer inline-flex shrink-0 items-center justify-center rounded-none border border-black bg-white min-h-8 min-w-8 p-0 text-black shadow-none outline-none hover:opacity-90 active:opacity-90 focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2";
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--bg)] text-[var(--fg)] pb-36 pt-8 md:pt-12">
       <CardLibraryPrefetch />
       <header className="max-w-3xl mx-auto w-full px-4 text-center mb-8 md:mb-10">
         <h1 className="text-3xl md:text-4xl font-medium tracking-tight text-[var(--fg)]">
-          Let it be simple
+          Let It Be Simple
         </h1>
+        <p className="mt-3 text-lg md:text-xl font-medium tracking-tight text-[var(--fg)]">
+          SIMPLE Sayings
+        </p>
       </header>
 
       <main className="flex min-h-0 flex-1 flex-col w-full items-center gap-4 md:gap-6">
@@ -215,14 +298,30 @@ export default function DeckHome() {
       <footer className="fixed bottom-0 left-0 right-0 z-10 flex flex-col gap-2 bg-[var(--bg)] px-4 pt-3 pb-4 shadow-none border-none">
         {countdownEnabled ? (
           <div
-            className="flex flex-col items-center gap-1"
+            className="flex flex-col items-center gap-2"
             aria-live="polite"
             aria-label={`Next cards in ${formatSecondsForAria(secondsLeft)}`}
           >
             <span className="text-xs font-medium uppercase tracking-wide text-[var(--fg)] opacity-85 md:text-sm">
               Next cards in
             </span>
-            <FlipClock secondsLeft={secondsLeft} />
+            <div className="flex flex-row items-center justify-center gap-4 flex-wrap">
+              <FlipClock secondsLeft={secondsLeft} />
+              <button
+                type="button"
+                className={pauseResumeBtnClass}
+                aria-pressed={countdownPaused}
+                aria-label={countdownPaused ? "Resume countdown" : "Pause countdown"}
+                title={countdownPaused ? "Resume" : "Pause"}
+                onClick={() => setCountdownPaused((p) => !p)}
+              >
+                {countdownPaused ? (
+                  <PlayIcon className="size-4" />
+                ) : (
+                  <PauseIcon className="size-4" />
+                )}
+              </button>
+            </div>
           </div>
         ) : null}
         <div className="flex w-full flex-row items-center gap-2">
@@ -237,11 +336,7 @@ export default function DeckHome() {
             >
               ‹
             </button>
-            <button
-              type="button"
-              onClick={handleRandom}
-              className="shrink-0 rounded-none border-none px-8 py-3 text-base font-medium bg-[var(--fg)] text-[var(--bg)] shadow-none outline-none hover:opacity-90 active:opacity-90 focus-visible:ring-2 focus-visible:ring-[var(--fg)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]"
-            >
+            <button type="button" onClick={handleRandom} className={primaryBtnClass}>
               Random
             </button>
             <button
@@ -254,7 +349,16 @@ export default function DeckHome() {
               ›
             </button>
           </div>
-          <div className="flex min-w-0 flex-1 shrink items-center justify-end">
+          <div className="flex min-w-0 flex-1 shrink items-center justify-end gap-1 md:gap-2">
+            <button
+              type="button"
+              title={`Shuffle full deck, clear saved hands, deal ${cardCount} new card${cardCount === 1 ? "" : "s"} (${allCards.length} in deck)`}
+              aria-label={`Shuffle: reset draw pool to all ${allCards.length} cards, clear deck history, and deal ${cardCount} new card${cardCount === 1 ? "" : "s"}`}
+              className={secondaryBtnClass}
+              onClick={handleShuffleReset}
+            >
+              Shuffle
+            </button>
             <ConfigDropdown
               open={configOpen}
               onOpenChange={setConfigOpen}
@@ -262,8 +366,6 @@ export default function DeckHome() {
               countdownSeconds={countdownSeconds}
               countdownEnabled={countdownEnabled}
               onApply={handleApply}
-              isDark={isDark}
-              onToggleTheme={toggleTheme}
             />
           </div>
         </div>

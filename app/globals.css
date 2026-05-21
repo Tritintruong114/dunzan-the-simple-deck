@@ -1,16 +1,8 @@
 @import "tailwindcss";
 
-/* Class-based dark mode (toggle sets `dark` on <html>) */
-@custom-variant dark (&:where(.dark, .dark *));
-
 :root {
   --bg: #ffffff;
   --fg: #000000;
-}
-
-.dark {
-  --bg: #0a0a0a;
-  --fg: #fafafa;
 }
 
 @theme inline {
@@ -41,6 +33,15 @@ body {
 
 body::-webkit-scrollbar {
   display: none;
+}
+
+a[href],
+button:not(:disabled),
+[role="button"],
+[type="button"],
+[type="submit"],
+summary {
+  cursor: pointer;
 }
 
 /* Cards / panels: no border, no shadow per design */

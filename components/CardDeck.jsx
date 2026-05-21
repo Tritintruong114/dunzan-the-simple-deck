@@ -7,7 +7,8 @@ import { useSyncExternalStore } from "react";
 const MOBILE_MAX_WIDTH_PX = 767;
 
 /** Fixed card width when viewport fits; capped by max-w-full / parent on narrow widths */
-const CARD_FIXED_WIDTH_PX = 440;
+/** Fits ~3 cards across on typical desktop frames (see deck max-width). */
+const CARD_FIXED_WIDTH_PX = 300;
 
 /** Matches Tailwind `gap-4` on the deck row — keep in sync when changing gap */
 const DECK_GAP_REM = 1;

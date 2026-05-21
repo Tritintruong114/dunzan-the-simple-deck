@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import instructionLinks from "@/lib/instructions.json";
 
 const DISCORD_URL = "https://discord.gg/3YRUp4cP5K";
 
@@ -39,7 +40,7 @@ function GearIcon({ className }) {
   );
 }
 
-/** Pill switch (no shadow); thumb slides between off/on. */
+/** Pill toggle: white frame + border; white track (off) / black track (on) */
 function ToggleSwitch({ checked, onCheckedChange, labelledBy }) {
   return (
     <button
@@ -48,36 +49,22 @@ function ToggleSwitch({ checked, onCheckedChange, labelledBy }) {
       aria-checked={checked}
       aria-labelledby={labelledBy}
       onClick={() => onCheckedChange(!checked)}
-      className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-none p-1 shadow-none outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[var(--fg)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)] ${
-        checked ? "bg-[var(--fg)]" : "bg-[color-mix(in_oklab,var(--fg)_22%,transparent)]"
-      }`}
+      className="inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border border-black bg-white p-0.5 shadow-none outline-none transition-colors focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 focus-visible:ring-offset-white"
     >
       <span
         aria-hidden
-        className={`pointer-events-none block size-5 rounded-full shadow-none transition-transform duration-200 ease-out will-change-transform ${
-          checked ? "translate-x-5 bg-[var(--bg)]" : "translate-x-0 bg-[var(--fg)]"
+        className={`flex h-5 w-full items-center rounded-full px-0.5 transition-colors duration-200 ease-out ${
+          checked ? "justify-end bg-black" : "justify-start bg-white"
         }`}
-      />
+      >
+        <span
+          className={`size-5 shrink-0 rounded-full shadow-none ${
+            checked ? "bg-white" : "bg-black"
+          }`}
+        />
+      </span>
     </button>
   );
-}
-
-export function instructionsFor(cardCount, countdownSeconds, countdownEnabled) {
-  const countdownLine = countdownEnabled
-    ? `The flip timer counts down to the next random cards (${countdownSeconds}s each round; minimum 10s). At zero the deck redraws and the timer restarts.`
-    : `Timer off: cards show right away — no flip countdown in the footer.`;
-
-  const historyLine =
-    "Use ‹ › next to Random to browse decks you’ve already seen; history stays in this browser (localStorage).";
-
-  return [
-    `${cardCount} random card${cardCount === 1 ? "" : "s"} each time the deck redraws.`,
-    countdownLine,
-    historyLine,
-    countdownEnabled
-      ? `Random draws a new deck immediately and resets the timer. Adjust settings anytime.`
-      : `Use Random for a fresh draw. Turn countdown on for automatic redraws on an interval.`,
-  ].join(" ");
 }
 
 export default function ConfigDropdown({
@@ -87,8 +74,6 @@ export default function ConfigDropdown({
   countdownSeconds,
   countdownEnabled,
   onApply,
-  isDark,
-  onToggleTheme,
 }) {
   const rootRef = useRef(null);
   const [draftCount, setDraftCount] = useState(cardCount);
@@ -148,17 +133,14 @@ export default function ConfigDropdown({
     onOpenChange(false);
   }
 
-  const hint = instructionsFor(
-    Math.min(7, Math.max(1, Number.parseInt(String(draftCount), 10) || 1)),
-    Math.max(10, Number.parseInt(String(draftSeconds), 10) || 10),
-    draftCountdownEnabled,
-  );
+  const inputClass =
+    "rounded-none border border-black bg-white px-2 py-2 text-black shadow-none outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 focus-visible:ring-offset-white tabular-nums";
 
   return (
     <div ref={rootRef} className="relative flex flex-col items-end gap-1">
       <button
         type="button"
-        className="flex items-center justify-center p-2 text-[var(--fg)] rounded-none bg-transparent border-none shadow-none outline-none focus-visible:ring-2 focus-visible:ring-[var(--fg)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]"
+        className="flex items-center justify-center p-2 text-black rounded-none bg-transparent border-none shadow-none outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 focus-visible:ring-offset-white cursor-pointer"
         aria-expanded={open}
         aria-haspopup="dialog"
         aria-label="Open settings"
@@ -171,10 +153,10 @@ export default function ConfigDropdown({
         <div
           role="dialog"
           aria-label="Settings"
-          className="absolute bottom-full right-0 mb-2 w-[min(92vw,22rem)] max-h-[70vh] overflow-y-auto rounded-none bg-[var(--bg)] text-[var(--fg)] border-none shadow-none p-4 flex flex-col gap-4 outline-none"
+          className="absolute bottom-full right-0 mb-2 w-[min(92vw,14rem)] min-h-[min(70vh,28rem)] max-h-[78vh] overflow-y-auto rounded-none border border-black bg-white text-black shadow-none p-4 flex flex-col gap-4 outline-none"
         >
-          <form className="flex flex-col gap-3" onSubmit={handleApply}>
-            <label className="flex flex-col gap-1 text-sm">
+          <form className="flex flex-col gap-4" onSubmit={handleApply}>
+            <label className="flex flex-col gap-2 text-sm">
               <span className="font-medium">Cards on screen (1–7)</span>
               <input
                 type="number"
@@ -183,14 +165,14 @@ export default function ConfigDropdown({
                 inputMode="numeric"
                 value={draftCount}
                 onChange={(ev) => setDraftCount(ev.target.value)}
-                className="rounded-none border-none bg-[color-mix(in_oklab,var(--fg)_8%,transparent)] px-2 py-2 text-[var(--fg)] shadow-none outline-none focus-visible:ring-2 focus-visible:ring-[var(--fg)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]"
+                className={inputClass}
               />
             </label>
 
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-col gap-2 border border-black bg-white p-2.5">
+              <div className="flex items-center justify-between gap-2">
                 <span id="countdown-toggle-label" className="text-sm font-medium">
-                  Countdown to next cards
+                  Countdown
                 </span>
                 <ToggleSwitch
                   checked={draftCountdownEnabled}
@@ -200,9 +182,9 @@ export default function ConfigDropdown({
               </div>
 
               {draftCountdownEnabled ? (
-                <label className="flex flex-col gap-1 text-sm">
-                  <span className="font-medium tabular-nums">
-                    Interval (seconds, min 10)
+                <label className="flex flex-col gap-1.5 text-sm">
+                  <span className="font-medium tabular-nums text-xs">
+                    Seconds (min 10)
                   </span>
                   <input
                     type="number"
@@ -210,7 +192,7 @@ export default function ConfigDropdown({
                     inputMode="numeric"
                     value={draftSeconds}
                     onChange={(ev) => setDraftSeconds(ev.target.value)}
-                    className="rounded-none border-none bg-[color-mix(in_oklab,var(--fg)_8%,transparent)] px-2 py-2 text-[var(--fg)] shadow-none outline-none focus-visible:ring-2 focus-visible:ring-[var(--fg)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]"
+                    className={inputClass}
                   />
                 </label>
               ) : null}
@@ -220,37 +202,41 @@ export default function ConfigDropdown({
 
             <button
               type="submit"
-              className="rounded-none bg-[var(--fg)] text-[var(--bg)] px-3 py-2 text-sm font-medium border-none shadow-none"
+              className="rounded-none bg-black text-white px-3 py-2.5 text-sm font-medium border border-black shadow-none cursor-pointer"
             >
               Apply
             </button>
           </form>
 
-          <div className="flex items-center justify-between gap-3 pt-2">
-            <span className="text-sm font-medium">Theme</span>
-            <button
-              type="button"
-              className="text-sm underline underline-offset-2 bg-transparent border-none shadow-none p-0 text-[var(--fg)]"
-              onClick={onToggleTheme}
+          <div className="text-xs leading-relaxed border-t border-black pt-4">
+            <p className="font-medium mb-2 text-sm">Instructions</p>
+            <ul className="flex flex-col gap-2 text-[13px] leading-snug list-none p-0 m-0">
+              {instructionLinks.map((item, index) => (
+                <li key={`${item.link}-${index}`}>
+                  <a
+                    href={item.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-black underline underline-offset-2 font-medium"
+                  >
+                    {item.title}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="mt-auto border-t border-black pt-4">
+            <a
+              href={DISCORD_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm font-medium text-black underline underline-offset-2 border-none shadow-none cursor-pointer"
             >
-              {isDark ? "Switch to light" : "Switch to dark"}
-            </button>
+              <DiscordIcon />
+              Join Let It Be Simple on Discord
+            </a>
           </div>
-
-          <div className="text-xs leading-relaxed text-[var(--fg)] opacity-90 pt-2">
-            <p className="font-medium mb-1 text-sm">How to play</p>
-            <p>{hint}</p>
-          </div>
-
-          <a
-            href={DISCORD_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-sm font-medium text-[var(--fg)] underline underline-offset-2 border-none shadow-none pt-1"
-          >
-            <DiscordIcon />
-            Join Dunzan on Discord
-          </a>
         </div>
       ) : null}
     </div>

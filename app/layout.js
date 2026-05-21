@@ -9,12 +9,10 @@ const roboto = Roboto({
 });
 
 export const metadata = {
-  title: "Dunzan — Let it be simple",
+  title: "Dunzan — Let It Be Simple",
   description:
     "Simple deck — random cards, countdown, and community at Dunzan.",
 };
-
-const themeBootstrapScript = `(function(){try{var k='dunzan-theme';var t=localStorage.getItem(k);if(t==='dark')document.documentElement.classList.add('dark');else document.documentElement.classList.remove('dark');}catch(e){}})();`;
 
 export default function RootLayout({ children }) {
   return (
@@ -23,11 +21,6 @@ export default function RootLayout({ children }) {
         className="min-h-full flex flex-col antialiased"
         suppressHydrationWarning
       >
-        {/* Sync inline script avoids next/script hydrating in a way that triggers React warnings. Runs during HTML parse before app JS. */}
-        <script
-          id="dunzan-theme-boot"
-          dangerouslySetInnerHTML={{ __html: themeBootstrapScript }}
-        />
         {children}
       </body>
     </html>
