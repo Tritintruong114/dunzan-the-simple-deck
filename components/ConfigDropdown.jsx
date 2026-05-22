@@ -227,7 +227,7 @@ export default function ConfigDropdown({
             <p className="font-medium mb-2 text-sm"><br/>Scroll the new tab for even more games</p>
           </div>
 
-          <div className="mt-auto border-t border-black pt-4">
+          <div className="mt-0 border-t border-black pt-4">
             <a
               href={DISCORD_URL}
               target="_blank"
