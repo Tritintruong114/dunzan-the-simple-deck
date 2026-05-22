@@ -153,7 +153,7 @@ export default function ConfigDropdown({
         <div
           role="dialog"
           aria-label="Settings"
-          className="absolute bottom-full right-0 mb-2 w-[min(92vw,14rem)] min-h-[min(70vh,28rem)] max-h-[78vh] overflow-y-auto rounded-none border border-black bg-white text-black shadow-none p-4 flex flex-col gap-4 outline-none"
+          className="absolute bottom-full right-0 mb-2 w-[min(92vw,14rem)] min-h-[min(70vh,28rem)] max-h-[78vh] overflow-y-auto rounded-none border border-black bg-white text-black shadow-none p-4 flex flex-col outline-none"
         >
           <form className="flex flex-col gap-4" onSubmit={handleApply}>
             <label className="flex flex-col gap-2 text-sm">
