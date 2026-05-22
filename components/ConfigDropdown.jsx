@@ -224,7 +224,7 @@ export default function ConfigDropdown({
                 </li>
               ))}
             </ul>
-            <p className="font-medium mb-2 text-sm">Scroll the new tab for even more games</p>
+            <p className="font-medium mb-2 text-sm"><br/>Scroll the new tab for even more games</p>
           </div>
 
           <div className="mt-auto border-t border-black pt-4">
