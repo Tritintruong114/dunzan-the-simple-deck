@@ -352,7 +352,7 @@ export default function DeckHome() {
           <div className="flex min-w-0 flex-1 shrink items-center justify-end gap-1 md:gap-2">
             <button
               type="button"
-              title={`Shuffle full deck, clear saved hands, deal ${cardCount} new card${cardCount === 1 ? "" : "s"} (${allCards.length} in deck)`}
+              title={`Reset randomizer`}
               aria-label={`Reset randomizer`}
               className={secondaryBtnClass}
               onClick={handleShuffleReset}
