@@ -209,7 +209,7 @@ export default function ConfigDropdown({
           </form>
 
           <div className="text-xs leading-relaxed border-t border-black pt-4">
-            <p className="font-medium mb-2 text-sm">Instructions</p>
+            <p className="font-medium mb-2 text-sm">Ways To Play (opens new tab)</p>
             <ul className="flex flex-col gap-2 text-[13px] leading-snug list-none p-0 m-0">
               {instructionLinks.map((item, index) => (
                 <li key={`${item.link}-${index}`}>
