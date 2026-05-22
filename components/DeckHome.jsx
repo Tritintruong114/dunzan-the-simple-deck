@@ -353,7 +353,7 @@ export default function DeckHome() {
             <button
               type="button"
               title={`Shuffle full deck, clear saved hands, deal ${cardCount} new card${cardCount === 1 ? "" : "s"} (${allCards.length} in deck)`}
-              aria-label={`Shuffle: reset draw pool to all ${allCards.length} cards, clear deck history, and deal ${cardCount} new card${cardCount === 1 ? "" : "s"}`}
+              aria-label={`Reset randomizer`}
               className={secondaryBtnClass}
               onClick={handleShuffleReset}
             >
