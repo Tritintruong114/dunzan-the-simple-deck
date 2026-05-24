@@ -25,6 +25,7 @@ import CardLibraryPrefetch from "@/components/CardLibraryPrefetch";
 import ConfigDropdown from "@/components/ConfigDropdown";
 import DeckImagePreloads from "@/components/DeckImagePreloads";
 import FlipClock from "@/components/FlipClock";
+import { useMobileViewport } from "@/lib/useMobileViewport";
 
 const EMPTY_HISTORY = { entries: [], index: 0 };
 
@@ -81,6 +82,8 @@ export default function DeckHome() {
   const cycleTransitionLockRef = useRef(false);
 
   const [configOpen, setConfigOpen] = useState(false);
+
+  const isMobile = useMobileViewport();
 
   const displayedPaths =
     deckHistory.entries.length > 0 &&
@@ -263,19 +266,29 @@ export default function DeckHome() {
   };
 
   const navBtnClass =
-    "cursor-pointer inline-flex shrink-0 items-center justify-center rounded-none border-none min-h-11 min-w-11 px-4 py-4 text-2xl leading-none font-medium tabular-nums text-[var(--fg)] md:min-h-12 md:min-w-12 md:text-3xl bg-transparent shadow-none outline-none hover:opacity-90 active:opacity-90 disabled:pointer-events-none disabled:opacity-25 focus-visible:ring-2 focus-visible:ring-[var(--fg)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]";
+    "cursor-pointer inline-flex shrink-0 items-center justify-center rounded-none border-none min-h-11 min-w-11 px-4 py-4 text-2xl leading-none font-medium tabular-nums text-[var(--fg)] max-md:min-h-9 max-md:min-w-9 max-md:px-2 max-md:py-2 max-md:text-xl md:min-h-12 md:min-w-12 md:text-3xl bg-transparent shadow-none outline-none hover:opacity-90 active:opacity-90 disabled:pointer-events-none disabled:opacity-25 focus-visible:ring-2 focus-visible:ring-[var(--fg)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]";
 
   const primaryBtnClass =
-    "cursor-pointer shrink-0 rounded-none border-none px-6 py-3 text-base font-medium bg-[var(--fg)] text-[var(--bg)] shadow-none outline-none hover:opacity-90 active:opacity-90 focus-visible:ring-2 focus-visible:ring-[var(--fg)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]";
+    "cursor-pointer shrink-0 rounded-none border-none px-6 py-3 text-base font-medium bg-[var(--fg)] text-[var(--bg)] max-md:px-3 max-md:py-2 max-md:text-sm shadow-none outline-none hover:opacity-90 active:opacity-90 focus-visible:ring-2 focus-visible:ring-[var(--fg)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]";
 
   const secondaryBtnClass =
-    "cursor-pointer shrink-0 rounded-none border border-black bg-white px-4 py-3 text-sm font-medium text-black shadow-none outline-none hover:opacity-90 active:opacity-90 focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2";
+    "cursor-pointer shrink-0 rounded-none border border-black bg-white px-4 py-3 text-sm font-medium text-black max-md:px-2 max-md:py-2 max-md:text-[0.65rem] max-md:leading-tight shadow-none outline-none hover:opacity-90 active:opacity-90 focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 touch-manipulation";
 
   const pauseResumeBtnClass =
-    "cursor-pointer inline-flex shrink-0 items-center justify-center rounded-none border border-black bg-white min-h-8 min-w-8 p-0 text-black shadow-none outline-none hover:opacity-90 active:opacity-90 focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2";
+    "cursor-pointer inline-flex shrink-0 items-center justify-center rounded-none border border-black bg-white min-h-8 min-w-8 max-md:min-h-7 max-md:min-w-7 p-0 text-black shadow-none outline-none hover:opacity-90 active:opacity-90 focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 touch-manipulation";
+
+  const shuffleTitle = isMobile
+    ? undefined
+    : `Shuffle full deck, clear saved hands, deal ${cardCount} new card${cardCount === 1 ? "" : "s"} (${allCards.length} in deck)`;
+
+  const pauseResumeTitle = isMobile
+    ? undefined
+    : countdownPaused
+      ? "Resume"
+      : "Pause";
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--bg)] text-[var(--fg)] pb-36 pt-8 md:pt-12">
+    <div className="min-h-screen min-h-[100dvh] flex flex-col overflow-x-hidden bg-[var(--bg)] text-[var(--fg)] pb-[calc(9rem+env(safe-area-inset-bottom,0px))] pt-8 md:pt-12">
       <CardLibraryPrefetch />
       <header className="max-w-3xl mx-auto w-full px-4 text-center mb-8 md:mb-10">
         <h1 className="text-3xl md:text-4xl font-medium tracking-tight text-[var(--fg)]">
@@ -295,7 +308,7 @@ export default function DeckHome() {
         </section>
       </main>
 
-      <footer className="fixed bottom-0 left-0 right-0 z-10 flex flex-col gap-2 bg-[var(--bg)] px-4 pt-3 pb-4 shadow-none border-none">
+      <footer className="fixed bottom-0 left-0 right-0 z-[100] flex flex-col gap-2 border-t border-transparent bg-[var(--bg)] px-[max(1rem,env(safe-area-inset-right),env(safe-area-inset-left))] pb-[calc(12px+env(safe-area-inset-bottom))] pt-3 shadow-none">
         {countdownEnabled ? (
           <div
             className="flex flex-col items-center gap-2"
@@ -305,26 +318,26 @@ export default function DeckHome() {
             <span className="text-xs font-medium uppercase tracking-wide text-[var(--fg)] opacity-85 md:text-sm">
               Next cards in
             </span>
-            <div className="flex flex-row items-center justify-center gap-4 flex-wrap">
+            <div className="flex flex-row items-center justify-center gap-4 max-md:gap-2 flex-wrap">
               <FlipClock secondsLeft={secondsLeft} />
               <button
                 type="button"
                 className={pauseResumeBtnClass}
                 aria-pressed={countdownPaused}
                 aria-label={countdownPaused ? "Resume countdown" : "Pause countdown"}
-                title={countdownPaused ? "Resume" : "Pause"}
+                title={pauseResumeTitle}
                 onClick={() => setCountdownPaused((p) => !p)}
               >
                 {countdownPaused ? (
-                  <PlayIcon className="size-4" />
+                  <PlayIcon className="size-4 max-md:size-3.5" />
                 ) : (
-                  <PauseIcon className="size-4" />
+                  <PauseIcon className="size-4 max-md:size-3.5" />
                 )}
               </button>
             </div>
           </div>
         ) : null}
-        <div className="flex w-full flex-row items-center gap-2">
+        <div className="flex w-full flex-row items-center gap-1 md:gap-2">
           <div className="min-w-0 flex-1 shrink" aria-hidden />
           <div className="flex shrink-0 flex-row flex-wrap items-center justify-center gap-1 md:gap-2">
             <button
@@ -352,12 +365,12 @@ export default function DeckHome() {
           <div className="flex min-w-0 flex-1 shrink items-center justify-end gap-1 md:gap-2">
             <button
               type="button"
-              title={`Reset randomizer`}
-              aria-label={`Reset randomizer`}
-              className={secondaryBtnClass}
+              title={shuffleTitle}
+              aria-label="Reset randomizer"
+              className={`${secondaryBtnClass} hidden md:inline-flex`}
               onClick={handleShuffleReset}
             >
-              Shuffle
+              Reset Randomizer
             </button>
             <ConfigDropdown
               open={configOpen}
@@ -366,6 +379,7 @@ export default function DeckHome() {
               countdownSeconds={countdownSeconds}
               countdownEnabled={countdownEnabled}
               onApply={handleApply}
+              onShuffleReset={isMobile ? handleShuffleReset : undefined}
             />
           </div>
         </div>

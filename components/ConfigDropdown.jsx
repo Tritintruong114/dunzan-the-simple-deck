@@ -74,6 +74,7 @@ export default function ConfigDropdown({
   countdownSeconds,
   countdownEnabled,
   onApply,
+  onShuffleReset,
 }) {
   const rootRef = useRef(null);
   const [draftCount, setDraftCount] = useState(cardCount);
@@ -130,6 +131,11 @@ export default function ConfigDropdown({
         countdownEnabled: false,
       });
     }
+    onOpenChange(false);
+  }
+
+  function handleShuffleResetClick() {
+    onShuffleReset?.();
     onOpenChange(false);
   }
 
@@ -238,6 +244,17 @@ export default function ConfigDropdown({
               Join Let It Be Simple on Discord
             </a>
           </div>
+
+          {onShuffleReset ? (
+            <button
+              type="button"
+              aria-label="Reset randomizer: full shuffle, clear saved hands, new deal"
+              className="mt-4 w-full rounded-none border border-black bg-white text-black px-3 py-2.5 text-sm font-medium shadow-none cursor-pointer hover:opacity-90 active:opacity-90 focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+              onClick={handleShuffleResetClick}
+            >
+              Reset Randomizer
+            </button>
+          ) : null}
         </div>
       ) : null}
     </div>

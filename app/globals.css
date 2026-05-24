@@ -15,6 +15,9 @@ html {
   background: var(--bg);
   scrollbar-width: none;
   -ms-overflow-style: none;
+  /* Stable mobile viewport height (Safari toolbar / standalone). */
+  min-height: 100%;
+  min-height: -webkit-fill-available;
 }
 
 html::-webkit-scrollbar {
@@ -24,6 +27,8 @@ html::-webkit-scrollbar {
 body {
   margin: 0;
   min-height: 100%;
+  /* Match html so flex layout doesn’t collapse on older iPhones. */
+  min-height: -webkit-fill-available;
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-roboto), ui-sans-serif, system-ui, sans-serif;
@@ -42,6 +47,7 @@ button:not(:disabled),
 [type="submit"],
 summary {
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 /* Cards / panels: no border, no shadow per design */
@@ -49,8 +55,16 @@ summary {
   border: none;
   box-shadow: none;
   outline: none;
-  /* Isolate layout from siblings while bitmaps decode (reduces whole-page jank). */
-  contain: layout;
+}
+
+/* Fallback height for older WebKit (e.g. iPhone 6s) when aspect-ratio + fill images collapse */
+@supports not (aspect-ratio: 23 / 16) {
+  .card-slot::before {
+    content: "";
+    display: block;
+    width: 100%;
+    padding-top: 69.565%;
+  }
 }
 
 /**
@@ -71,6 +85,12 @@ summary {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .card-slot-enter {
+    animation: none;
+  }
+}
+
+@media (max-width: 767px) {
   .card-slot-enter {
     animation: none;
   }
