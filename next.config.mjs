@@ -9,9 +9,8 @@ const nextConfig = {
     root: __dirname,
   },
   /**
-   * Card art is already served from `public/` at display resolution.
-   * Skipping the default `/_next/image` pipeline avoids first-hit Sharp work
-   * (noticeable in dev and on cold serverless) while keeping `next/image` layout.
+   * Card art is served from `public/` as PNG at display resolution.
+   * Cards use native `<img>` (not next/image) for iOS 15 / legacy Safari.
    */
   images: {
     unoptimized: true,

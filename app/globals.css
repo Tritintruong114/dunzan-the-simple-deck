@@ -57,16 +57,6 @@ summary {
   outline: none;
 }
 
-/* Fallback height for older WebKit (e.g. iPhone 6s) when aspect-ratio + fill images collapse */
-@supports not (aspect-ratio: 23 / 16) {
-  .card-slot::before {
-    content: "";
-    display: block;
-    width: 100%;
-    padding-top: 69.565%;
-  }
-}
-
 /**
  * Opacity-only enter: translate/scale fights compositing when `<Image>` lands and decodes,
  * which felt like a freeze/stutter on first paint.

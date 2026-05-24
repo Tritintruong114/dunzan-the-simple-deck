@@ -4,6 +4,7 @@ import {
   startTransition,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -100,35 +101,33 @@ export default function DeckHome() {
     });
   }, []);
 
-  useEffect(() => {
-    startTransition(() => {
-      const validSet = new Set(allCards);
-      const raw = loadDeckHistory();
-      if (raw?.entries?.length) {
-        const sanitized = sanitizeEntries(raw.entries, validSet);
-        const clamped = clampLoadedHistory(raw, sanitized);
-        if (clamped) {
-          const pathsNow = clamped.entries[clamped.index];
-          const n = pathsNow?.length ?? 1;
-          setCardCount(Math.min(7, Math.max(1, n)));
-          setDeckHistory(clamped);
-          saveDeckHistory(clamped);
-          poolRef.current = buildRemainingPoolFromHistory(
-            allCards,
-            clamped.entries,
-            clamped.index,
-          );
-          return;
-        }
+  useLayoutEffect(() => {
+    const validSet = new Set(allCards);
+    const raw = loadDeckHistory();
+    if (raw?.entries?.length) {
+      const sanitized = sanitizeEntries(raw.entries, validSet);
+      const clamped = clampLoadedHistory(raw, sanitized);
+      if (clamped) {
+        const pathsNow = clamped.entries[clamped.index];
+        const n = pathsNow?.length ?? 1;
+        setCardCount(Math.min(7, Math.max(1, n)));
+        setDeckHistory(clamped);
+        saveDeckHistory(clamped);
+        poolRef.current = buildRemainingPoolFromHistory(
+          allCards,
+          clamped.entries,
+          clamped.index,
+        );
+        return;
       }
-      const pool0 = shuffle([...allCards]);
-      const { hand, nextPool } = drawWithoutReplacement(pool0, 1, allCards);
-      const initial = { entries: [hand], index: 0 };
-      setDeckHistory(initial);
-      saveDeckHistory(initial);
-      setCardCount(1);
-      poolRef.current = nextPool;
-    });
+    }
+    const pool0 = shuffle([...allCards]);
+    const { hand, nextPool } = drawWithoutReplacement(pool0, 1, allCards);
+    const initial = { entries: [hand], index: 0 };
+    setDeckHistory(initial);
+    saveDeckHistory(initial);
+    setCardCount(1);
+    poolRef.current = nextPool;
   }, [allCards]);
 
   const commitDraw = useCallback(
@@ -288,9 +287,9 @@ export default function DeckHome() {
       : "Pause";
 
   return (
-    <div className="min-h-screen min-h-[100dvh] flex flex-col overflow-x-hidden bg-[var(--bg)] text-[var(--fg)] pb-[calc(9rem+env(safe-area-inset-bottom,0px))] pt-8 md:pt-12">
+    <div className="flex min-h-[100dvh] flex-1 flex-col overflow-x-hidden bg-[var(--bg)] text-[var(--fg)] pb-[calc(9rem+env(safe-area-inset-bottom,0px))] pt-8 md:pt-12">
       <CardLibraryPrefetch />
-      <header className="max-w-3xl mx-auto w-full px-4 text-center mb-8 md:mb-10">
+      <header className="max-w-3xl mx-auto w-full shrink-0 px-4 text-center mb-8 md:mb-10">
         <h1 className="text-3xl md:text-4xl font-medium tracking-tight text-[var(--fg)]">
           Let It Be Simple
         </h1>
@@ -299,8 +298,8 @@ export default function DeckHome() {
         </p>
       </header>
 
-      <main className="flex min-h-0 flex-1 flex-col w-full items-center gap-4 md:gap-6">
-        <section className="flex min-h-0 w-full min-w-0 flex-1 flex-col items-center justify-center gap-4 px-4 pb-1">
+      <main className="flex w-full min-h-[40vh] flex-1 flex-col items-center gap-4 overflow-y-auto md:gap-6">
+        <section className="flex w-full min-w-0 flex-1 flex-col items-center justify-center gap-4 px-4 py-2">
           {displayedPaths.length > 0 ? (
             <DeckImagePreloads paths={displayedPaths} />
           ) : null}

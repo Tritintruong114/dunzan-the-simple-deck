@@ -24,7 +24,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${roboto.variable} h-full`} suppressHydrationWarning>
       <body
-        className="min-h-full flex flex-col antialiased"
+        className="flex min-h-[100vh] min-h-[100dvh] flex-col antialiased"
         suppressHydrationWarning
       >
         {children}
