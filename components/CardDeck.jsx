@@ -1,10 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useSyncExternalStore } from "react";
-
-/** Tailwind `md` starts at 768px — single-column deck below this width */
-const MOBILE_MAX_WIDTH_PX = 767;
+import {
+  MOBILE_MAX_WIDTH_PX,
+  useMobileViewport,
+} from "@/lib/useMobileViewport";
 
 /** Fixed card width when viewport fits; capped by max-w-full / parent on narrow widths */
 /** Fits ~3 cards across on typical desktop frames (see deck max-width). */
@@ -22,23 +22,14 @@ const MAX_DECK_WIDTH_THREE_CARDS = `min(100%, calc(${CARD_FIXED_WIDTH_PX * 3}px 
  * looks like slots are “stretched tall” especially when several cards appear at once.
  */
 const CARD_ASPECT_RATIO = "23 / 16";
+const CARD_HEIGHT_RATIO = 16 / 23;
 
 /** Layout hints for intrinsic sizing (`sizes` width map when `fill`/`width` are set). */
 const IMAGE_SIZES =
   `(max-width: ${MOBILE_MAX_WIDTH_PX}px) min(100vw, ${CARD_FIXED_WIDTH_PX}px), ${CARD_FIXED_WIDTH_PX}px`;
 
-function subscribeMobileMaxWidth(cb) {
-  const mq = window.matchMedia(`(max-width: ${MOBILE_MAX_WIDTH_PX}px)`);
-  mq.addEventListener("change", cb);
-  return () => mq.removeEventListener("change", cb);
-}
-
-function getMobileMaxWidthMatches() {
-  return window.matchMedia(`(max-width: ${MOBILE_MAX_WIDTH_PX}px)`).matches;
-}
-
 const SLOT_BASE =
-  "card-slot card-slot-enter relative h-fit min-h-0 shrink-0 overflow-hidden rounded-none bg-[var(--bg)] p-0 leading-none";
+  "card-slot card-slot-enter relative w-full min-h-0 shrink-0 overflow-hidden rounded-none bg-[var(--bg)] p-0 leading-none";
 
 function CardSlot({
   src,
@@ -52,6 +43,10 @@ function CardSlot({
     ? { width: "100%", maxWidth: CARD_FIXED_WIDTH_PX }
     : { width: CARD_FIXED_WIDTH_PX, maxWidth: "100%" };
 
+  const minHeight = narrowStack
+    ? `calc(min(100vw - 2rem, ${CARD_FIXED_WIDTH_PX}px) * ${CARD_HEIGHT_RATIO})`
+    : `calc(min(100%, ${CARD_FIXED_WIDTH_PX}px) * ${CARD_HEIGHT_RATIO})`;
+
   const sharedImgClass =
     "z-[1] m-0 object-contain p-0 align-middle pointer-events-none select-none";
 
@@ -61,6 +56,7 @@ function CardSlot({
       style={{
         ...sizingStyle,
         aspectRatio,
+        minHeight,
       }}
     >
       <Image
@@ -83,11 +79,7 @@ function CardSlot({
 }
 
 export default function CardDeck({ paths, revealed }) {
-  const narrowViewport = useSyncExternalStore(
-    subscribeMobileMaxWidth,
-    getMobileMaxWidthMatches,
-    () => false,
-  );
+  const narrowViewport = useMobileViewport();
 
   const deckClassName = narrowViewport
     ? "flex h-fit w-full max-w-full min-w-0 flex-col items-center gap-4"
